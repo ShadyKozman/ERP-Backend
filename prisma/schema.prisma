@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model UsersAccounts {
+  id             Int      @id @default(autoincrement())
+  displayName    String
+  email          String   @unique
+  mobileNumber   String   @unique
+  password       String
+  role           Int
+  company        Int?
+  passwordOTP    Int?
+  isActive       Boolean
+  isDeleted      Boolean  @default(false)
+  isFirstLogin   Boolean  @default(true)
+  lastLogin      DateTime?
+  refreshToken   String?  @db.VarChar(600)
+
+  createdBy      Int?
+  updatedBy      Int?
+  deletedBy      Int?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+
+  UserRole     Roles              @relation(fields: [role], references: [id])
+  UserCompany  CompaniesAccounts? @relation(fields: [company], references: [id])
+
+  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
+  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+
+  createdFunctions  Functions[] @relation("CreatedByRelation")
+  updatedFunctions  Functions[] @relation("UpdatedByRelation")
+  deletedFunctions  Functions[] @relation("DeletedByRelation")
+
+  createdRolesFunctions  RolesFunctions[] @relation("CreatedByRelation")
+  updatedRolesFunctions  RolesFunctions[] @relation("UpdatedByRelation")
+
+  createdRoles   Roles[] @relation("CreatedByRelation")
+  updatedRoles   Roles[] @relation("UpdatedByRelation")
+  deletedRoles   Roles[] @relation("DeletedByRelation")
+
+  createdUsers   UsersAccounts[] @relation("CreatedByRelation")
+  updatedUsers   UsersAccounts[] @relation("UpdatedByRelation")
+  deletedUsers   UsersAccounts[] @relation("DeletedByRelation")
+
+  createdCompanies  CompaniesAccounts[] @relation("CreatedByRelation")
+  updatedCompanies  CompaniesAccounts[] @relation("UpdatedByRelation")
+  deletedCompanies  CompaniesAccounts[] @relation("DeletedByRelation")
+
+  @@map("users_accounts")
+}
+
+model CompaniesAccounts {
+  id             Int      @id @default(autoincrement())
+  displayName    String
+  isActive       Boolean
+  isDeleted      Boolean  @default(false)
+
+  createdBy      Int?
+  updatedBy      Int?
+  deletedBy      Int?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+
+  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
+  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+
+  Roles          Roles[]
+  UsersAccounts  UsersAccounts[]
+
+  @@map("companies_accounts")
+}
+
+model Roles {
+  id             Int      @id @default(autoincrement())
+  displayName    String
+  isActive       Boolean
+  company        Int?
+  isDeleted      Boolean  @default(false)
+
+  createdBy      Int?
+  updatedBy      Int?
+  deletedBy      Int?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+
+  Company        CompaniesAccounts? @relation(fields: [company], references: [id])
+
+  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
+  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+
+  UsersAccounts  UsersAccounts[]
+  RolesFunctions RolesFunctions[]
+
+  @@map("roles")
+}
+
+model Functions {
+  id             Int      @id @default(autoincrement())
+  displayName    String
+  isDeleted      Boolean  @default(false)
+
+  createdBy      Int?
+  updatedBy      Int?
+  deletedBy      Int?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime?
+  deletedAt      DateTime?
+
+  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
+  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+
+  RolesFunctions RolesFunctions[]
+
+  @@map("functions")
+}
+
+model RolesFunctions {
+  id             Int      @id @default(autoincrement())
+  role           Int
+  function       Int
+
+  createdBy      Int?
+  updatedBy      Int?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime?
+
+  Role           Roles     @relation(fields: [role], references: [id])
+  Function       Functions @relation(fields: [function], references: [id])
+
+  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
+  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+
+  @@map("roles_functions")
+}
