@@ -19,6 +19,7 @@ import {
 
 const router = express.Router();
 
+/* -------------------Tested Successfully-------------------*/
 router.get("/", authenticateToken, getAllCompanies);
 
 router.post(

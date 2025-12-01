@@ -1,5 +1,6 @@
 import Joi from "joi";
 
+/* -------------------Tested Successfully-------------------*/
 export const addCompanySchema = Joi.object({
   displayName: Joi.string().required().messages({
     "any.required": "Display name is required",

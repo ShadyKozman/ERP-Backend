@@ -1,27 +1,44 @@
 import prisma from "../config/database.js";
 
+/* -------------------Tested Successfully-------------------*/
 export const getCompanies = async () => {
   try {
-    return await prisma.companiesAccounts.findMany({
+    const companies = await prisma.companiesAccounts.findMany({
       select: {
         id: true,
         isActive: true,
+        isDeleted: true,
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
         displayName: true,
+
         createdByUser: { select: { displayName: true } },
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },
+
+        // Get isActive for each user so we can count
+        UsersAccounts: {
+          select: { isActive: true },
+        },
       },
     });
+
+    // Add counts
+    return companies.map((c) => ({
+      ...c,
+      activeUsersCount: c.UsersAccounts.filter((u) => u.isActive).length,
+      inactiveUsersCount: c.UsersAccounts.filter((u) => !u.isActive).length,
+    }));
   } catch (err) {
     throw new Error(err.message);
   }
 };
 
-export const addCompany = async (body, currentUser) => {
+export const addCompany = async (req) => {
   try {
+    const { body, currentUser } = req;
+
     const dataToCreate = {
       ...body,
       createdAt: new Date(),
@@ -42,12 +59,15 @@ export const addCompany = async (body, currentUser) => {
   }
 };
 
-export const patchCompany = async (body, currentUser) => {
+export const patchCompany = async (req) => {
   try {
+    const { body, currentUser } = req;
     const { company, ...bodyData } = body;
 
     const dataToUpdate = {
       ...bodyData,
+      deletedBy: null,
+      isDeleted: false,
       updatedAt: new Date(),
       updatedBy: currentUser.id,
     };
