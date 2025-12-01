@@ -9,6 +9,7 @@ import {
   getUsersSchema,
   patchUserSchema,
   deleteUserSchema,
+  updateMyProfileSchema,
 } from "../validators/usersAccounts.validator.js";
 
 import {
@@ -16,9 +17,13 @@ import {
   deleteUser,
   updateUser,
   getAllUsers,
+  updateProfile,
+  getAllScreens,
 } from "../controllers/usersAccounts.controller.js";
 
 const router = express.Router();
+
+router.get("/screens", authenticateToken, getAllScreens);
 
 router.post("/", authenticateToken, validateRequest(addUserSchema), addUser);
 
@@ -41,6 +46,14 @@ router.delete(
   authenticateToken,
   validateRequest(deleteUserSchema, { convert: true }),
   deleteUser
+);
+
+/* -------------------Tested Successfully-------------------*/
+router.patch(
+  "/profile",
+  authenticateToken,
+  validateRequest(updateMyProfileSchema),
+  updateProfile
 );
 
 export default router;

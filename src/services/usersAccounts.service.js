@@ -20,8 +20,15 @@ export const getUsers = async (req) => {
         createdByUser: { select: { displayName: true } },
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },
-        UserRole: {
+        userRole: {
           select: {
+            id: true,
+            displayName: true,
+          },
+        },
+        userCompany: {
+          select: {
+            id: true,
             displayName: true,
           },
         },
@@ -32,7 +39,28 @@ export const getUsers = async (req) => {
   }
 };
 
-export const addUser = async (body, currentUser) => {
+export const getScreens = async (req) => {
+  try {
+    return await prisma.functions.findMany({
+      where: {
+        ...(req.company && { company: Number(req.company) }),
+      },
+      select: {
+        id: true,
+        parentMenu: true,
+        displayName: true,
+      },
+    });
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+
+export const addUser = async (req) => {
+  const { body, currentUser } = req;
+
+  delete body.screens;
+
   try {
     const dataToCreate = {
       ...body,
@@ -40,6 +68,18 @@ export const addUser = async (body, currentUser) => {
       createdAt: new Date(),
       createdBy: currentUser.id,
     };
+
+    // if (body.screens && body.screens.length > 0) {
+    //   const data = body.screens.map((screen) => ({
+    //     role: body.role,
+    //     function: screen,
+    //   }));
+
+    //   await prisma.rolesFunctions.createMany({
+    //     data,
+    //     skipDuplicates: true,
+    //   });
+    // }
 
     Object.keys(dataToCreate).forEach(
       (key) => dataToCreate[key] === undefined && delete dataToCreate[key]
@@ -55,19 +95,35 @@ export const addUser = async (body, currentUser) => {
   }
 };
 
-export const patchUser = async (body, currentUser) => {
+export const patchUser = async (req) => {
   try {
-    const { user, ...bodyData } = body;
+    const { body, currentUser } = req;
+
+    const user = body.user;
+
+    delete body.user;
 
     const dataToUpdate = {
-      ...bodyData,
+      ...body,
       updatedAt: new Date(),
       updatedBy: currentUser.id,
     };
 
-    if (bodyData.password) {
+    if (body.screens && body.screens.length > 0) {
+      const data = body.screens.map((screen) => ({
+        role: body.role,
+        function: screen,
+      }));
+
+      await prisma.rolesFunctions.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
+
+    if (body.password) {
       const rounds = 10;
-      const hashedPassword = await bcrypt.hash(bodyData.password, rounds);
+      const hashedPassword = await bcrypt.hash(body.password, rounds);
       dataToUpdate.password = hashedPassword;
       dataToUpdate.isFirstLogin = false;
     }
@@ -105,6 +161,39 @@ export const deleteUser = async (req) => {
 
     await prisma.usersAccounts.update({
       where: { id: Number(user) },
+      data: dataToUpdate,
+    });
+
+    return [];
+  } catch (err) {
+    throw new Error(err.message);
+  }
+};
+
+/* -------------------Tested Successfully-------------------*/
+export const updateProfile = async (req) => {
+  try {
+    const { body, currentUser } = req;
+
+    const dataToUpdate = {
+      ...body,
+      updatedAt: new Date(),
+      updatedBy: currentUser.id,
+    };
+
+    if (body.password) {
+      const rounds = 10;
+      const hashedPassword = await bcrypt.hash(body.password, rounds);
+      dataToUpdate.password = hashedPassword;
+      dataToUpdate.isFirstLogin = false;
+    }
+
+    Object.keys(dataToUpdate).forEach(
+      (key) => dataToUpdate[key] === undefined && delete dataToUpdate[key]
+    );
+
+    await prisma.usersAccounts.update({
+      where: { id: currentUser.id },
       data: dataToUpdate,
     });
 
