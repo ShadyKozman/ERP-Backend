@@ -2,6 +2,7 @@ import * as authService from "../services/auth.service.js";
 
 import { sendSuccess, sendError } from "../middlewares/responseHandler.js";
 
+/* -------------------Tested Successfully-------------------*/
 export const login = async (req, res) => {
   try {
     const result = await authService.login(req.body);

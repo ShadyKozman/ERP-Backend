@@ -13,6 +13,7 @@ import validateRequest from "../middlewares/requestValidatorHandler.js";
 
 const router = express.Router();
 
+/* -------------------Tested Successfully-------------------*/
 router.post("/login", validateRequest(loginSchema), authController.login);
 
 router.post(

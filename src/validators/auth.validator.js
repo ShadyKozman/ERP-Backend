@@ -1,11 +1,15 @@
 import Joi from "joi";
 
+/* -------------------Tested Successfully-------------------*/
 export const loginSchema = Joi.object({
   emailOrMobile: Joi.string()
     .allow(null)
     .empty(null)
     .custom((value, helpers) => {
-      const isMobile = /^\+?[0-9]{10,15}$/.test(value);
+      const isMobile =
+        /^(\+?20)?(010|011|012|015)\d{8}$|^(\+?971)?(50|52|54|55|56|58)\d{7}$| ^(\+?966)?5\d{8}$/.test(
+          value
+        );
       const isEmail = Joi.string().email().validate(value).error === undefined;
 
       if (!isEmail && !isMobile) {
@@ -13,14 +17,12 @@ export const loginSchema = Joi.object({
       }
 
       return value;
-    }, "Login Validation")
+    })
     .required()
     .messages({
       "any.required": "Email/mobile is required",
       "string.empty": "Email/mobile cannot be empty",
       "any.invalid": "Please enter a valid email or mobile number",
-      "string.base":
-        "Email must contain only characters/Mobile must contain only numbers",
     }),
 
   password: Joi.string().allow(null).empty(null).required().messages({

@@ -10,6 +10,7 @@ import {
   BadRequestError,
 } from "../middlewares/responseHandler.js";
 
+/* -------------------Tested Successfully-------------------*/
 export const login = async (body) => {
   const { emailOrMobile, password } = body;
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrMobile);
@@ -31,16 +32,24 @@ export const login = async (body) => {
       createdByUser: { select: { displayName: true } },
       updatedByUser: { select: { displayName: true } },
       deletedByUser: { select: { displayName: true } },
-      UserRole: {
+      userCompany: {
         select: {
+          id: true,
           displayName: true,
-          RolesFunctions: {
+          isActive: true,
+          isDeleted: true,
+          CompaniesModules: {
             select: {
-              Function: {
-                select: {
-                  displayName: true,
-                },
-              },
+              module: true,
+            },
+          },
+        },
+      },
+      userRole: {
+        include: {
+          RolesFunctions: {
+            include: {
+              Function: true,
             },
           },
         },
@@ -48,13 +57,44 @@ export const login = async (body) => {
     },
   });
 
-  user.UserRole.RolesFunctions = user.UserRole.RolesFunctions.map(
-    (rf) => rf.Function.displayName
-  );
-
   if (!user) throw new NotFoundError("User not found");
   if (!user.isActive)
     throw new BadRequestError("User not active, contact your admin");
+
+  if (
+    user.userCompany &&
+    (user.userCompany.isActive === false || user.userCompany.isDeleted === true)
+  )
+    throw new BadRequestError(
+      "User company not active or is deleted, contact your admin"
+    );
+
+  let allowedFunctions = user.userRole.RolesFunctions;
+
+  if (user.userCompany) {
+    const companyModuleIds = user.userCompany.CompaniesModules.map(
+      (cm) => cm.module
+    );
+
+    allowedFunctions = allowedFunctions.filter((rf) =>
+      companyModuleIds.includes(rf.Function.id)
+    );
+  }
+
+  const uniqueFunctionsMap = new Map();
+
+  allowedFunctions.forEach((rf) => {
+    if (!uniqueFunctionsMap.has(rf.Function.id)) {
+      uniqueFunctionsMap.set(rf.Function.id, {
+        key: rf.Function.menuName,
+        label: rf.Function.displayName,
+        icon: rf.Function.icon,
+        parent_key: rf.Function.parentMenu,
+      });
+    }
+  });
+
+  user.userRole.RolesFunctions = Array.from(uniqueFunctionsMap.values());
 
   const isValidPassword = await bcrypt.compare(password, user.password);
   if (!isValidPassword) throw new BadRequestError("Invalid credentials");
