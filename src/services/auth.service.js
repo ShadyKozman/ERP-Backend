@@ -46,10 +46,21 @@ export const login = async (body) => {
         },
       },
       userRole: {
-        include: {
-          RolesFunctions: {
-            include: {
-              Function: true,
+        select: {
+          id: true,
+          displayName: true,
+        },
+      },
+      userFunctions: {
+        select: {
+          id: true,
+          Function: {
+            select: {
+              id: true,
+              menuName: true,
+              displayName: true,
+              icon: true,
+              parentMenu: true,
             },
           },
         },
@@ -69,7 +80,7 @@ export const login = async (body) => {
       "User company not active or is deleted, contact your admin"
     );
 
-  let allowedFunctions = user.userRole.RolesFunctions;
+  let allowedFunctions = user.userFunctions;
 
   if (user.userCompany) {
     const companyModuleIds = user.userCompany.CompaniesModules.map(
@@ -94,7 +105,7 @@ export const login = async (body) => {
     }
   });
 
-  user.userRole.RolesFunctions = Array.from(uniqueFunctionsMap.values());
+  user.userFunctions = Array.from(uniqueFunctionsMap.values());
 
   const isValidPassword = await bcrypt.compare(password, user.password);
   if (!isValidPassword) throw new BadRequestError("Invalid credentials");

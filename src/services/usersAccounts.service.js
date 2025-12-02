@@ -12,6 +12,7 @@ export const getUsers = async (req) => {
         id: true,
         email: true,
         isActive: true,
+        isDeleted: true,
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
@@ -30,6 +31,20 @@ export const getUsers = async (req) => {
           select: {
             id: true,
             displayName: true,
+          },
+        },
+        userFunctions: {
+          select: {
+            id: true,
+            Function: {
+              select: {
+                id: true,
+                menuName: true,
+                displayName: true,
+                icon: true,
+                parentMenu: true,
+              },
+            },
           },
         },
       },
@@ -59,8 +74,6 @@ export const getScreens = async (req) => {
 export const addUser = async (req) => {
   const { body, currentUser } = req;
 
-  delete body.screens;
-
   try {
     const dataToCreate = {
       ...body,
@@ -69,25 +82,29 @@ export const addUser = async (req) => {
       createdBy: currentUser.id,
     };
 
-    // if (body.screens && body.screens.length > 0) {
-    //   const data = body.screens.map((screen) => ({
-    //     role: body.role,
-    //     function: screen,
-    //   }));
-
-    //   await prisma.rolesFunctions.createMany({
-    //     data,
-    //     skipDuplicates: true,
-    //   });
-    // }
+    delete dataToCreate.screens;
 
     Object.keys(dataToCreate).forEach(
       (key) => dataToCreate[key] === undefined && delete dataToCreate[key]
     );
 
-    await prisma.usersAccounts.create({
+    const createdUser = await prisma.usersAccounts.create({
       data: dataToCreate,
     });
+
+    if (body.screens && body.screens.length > 0) {
+      const data = body.screens.map((screenId) => ({
+        function: screen,
+        user: createdUser.id,
+        createdAt: new Date(),
+        createdBy: currentUser.id,
+      }));
+
+      await prisma.userFunctions.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
 
     return [];
   } catch (err) {
@@ -99,31 +116,37 @@ export const patchUser = async (req) => {
   try {
     const { body, currentUser } = req;
 
-    const user = body.user;
+    const { user, role, company, screens, password, ...restBody } = body;
 
-    delete body.user;
-
-    const dataToUpdate = {
-      ...body,
+    let dataToUpdate = {
+      ...restBody,
       updatedAt: new Date(),
-      updatedBy: currentUser.id,
+      updatedByUser: { connect: { id: currentUser.id } },
     };
 
-    if (body.screens && body.screens.length > 0) {
-      const data = body.screens.map((screen) => ({
-        role: body.role,
+    if (role !== undefined) {
+      dataToUpdate.userRole = { connect: { id: role } };
+    }
+
+    if (company !== undefined) {
+      dataToUpdate.userCompany = { connect: { id: company } };
+    }
+
+    if (screens && screens.length > 0) {
+      const data = screens.map((screen) => ({
+        user: user,
         function: screen,
       }));
 
-      await prisma.rolesFunctions.createMany({
+      await prisma.userFunctions.createMany({
         data,
         skipDuplicates: true,
       });
     }
 
-    if (body.password) {
+    if (password) {
       const rounds = 10;
-      const hashedPassword = await bcrypt.hash(body.password, rounds);
+      const hashedPassword = await bcrypt.hash(password, rounds);
       dataToUpdate.password = hashedPassword;
       dataToUpdate.isFirstLogin = false;
     }
