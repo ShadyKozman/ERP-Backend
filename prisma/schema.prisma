@@ -30,37 +30,42 @@ model UsersAccounts {
   updatedAt      DateTime?
   deletedAt      DateTime?
 
-  UserRole     Roles              @relation(fields: [role], references: [id])
-  UserCompany  CompaniesAccounts? @relation(fields: [company], references: [id])
+  userRole     Roles              @relation("userRole", fields: [role], references: [id])
+  userCompany  CompaniesAccounts? @relation("userCompany", fields: [company], references: [id])
 
-  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
-  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
-  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("userCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userUpdatedBy", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("userDeletedBy", fields: [deletedBy], references: [id])
 
-  createdFunctions  Functions[] @relation("CreatedByRelation")
-  updatedFunctions  Functions[] @relation("UpdatedByRelation")
-  deletedFunctions  Functions[] @relation("DeletedByRelation")
+  createdUsers UsersAccounts[] @relation("userCreatedBy")
+  updatedUsers UsersAccounts[] @relation("userUpdatedBy")
+  deletedUsers UsersAccounts[] @relation("userDeletedBy")
 
-  createdRolesFunctions  RolesFunctions[] @relation("CreatedByRelation")
-  updatedRolesFunctions  RolesFunctions[] @relation("UpdatedByRelation")
+  createdFunctions  Functions[] @relation("userCreatedFunctions")
+  updatedFunctions  Functions[] @relation("userUpdatedFunctions")
+  deletedFunctions  Functions[] @relation("userDeletedFunctions")
 
-  createdRoles   Roles[] @relation("CreatedByRelation")
-  updatedRoles   Roles[] @relation("UpdatedByRelation")
-  deletedRoles   Roles[] @relation("DeletedByRelation")
+  createdUserFunctions  UserFunctions[] @relation("userCreatedUserFunctions")
+  updatedUserFunctions  UserFunctions[] @relation("userUpdatedUserFunctions")
 
-  createdUsers   UsersAccounts[] @relation("CreatedByRelation")
-  updatedUsers   UsersAccounts[] @relation("UpdatedByRelation")
-  deletedUsers   UsersAccounts[] @relation("DeletedByRelation")
+  createdRoles   Roles[] @relation("userCreatedRoles")
+  updatedRoles   Roles[] @relation("userUpdatedRoles")
+  deletedRoles   Roles[] @relation("userDeletedRoles")
 
-  createdCompanies  CompaniesAccounts[] @relation("CreatedByRelation")
-  updatedCompanies  CompaniesAccounts[] @relation("UpdatedByRelation")
-  deletedCompanies  CompaniesAccounts[] @relation("DeletedByRelation")
+  createdCompanies  CompaniesAccounts[] @relation("userCreatedCompanies")
+  updatedCompanies  CompaniesAccounts[] @relation("userUpdatedCompanies")
+  deletedCompanies  CompaniesAccounts[] @relation("userDeletedCompanies")
+
+  createdCompanyModules CompaniesModules[] @relation("userCreatedCompanyModules")
+  deletedCompanyModules CompaniesModules[] @relation("userDeletedCompanyModules")
+
+  userFunctions UserFunctions[]
 
   @@map("users_accounts")
 }
 
 model CompaniesAccounts {
-  id             Int      @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())  
   displayName    String
   isActive       Boolean
   isDeleted      Boolean  @default(false)
@@ -73,81 +78,107 @@ model CompaniesAccounts {
   updatedAt      DateTime?
   deletedAt      DateTime?
 
-  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
-  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
-  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("userCreatedCompanies", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userUpdatedCompanies", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("userDeletedCompanies", fields: [deletedBy], references: [id])
 
   Roles          Roles[]
-  UsersAccounts  UsersAccounts[]
+  UsersAccounts  UsersAccounts[] @relation("userCompany")
+  CompaniesModules CompaniesModules[]
 
   @@map("companies_accounts")
 }
 
-model Roles {
-  id             Int      @id @default(autoincrement())
-  displayName    String
-  isActive       Boolean
-  company        Int?
-  isDeleted      Boolean  @default(false)
-
-  createdBy      Int?
-  updatedBy      Int?
-  deletedBy      Int?
+model CompaniesModules {
+  company  Int
+  module   Int
 
   createdAt      DateTime @default(now())
-  updatedAt      DateTime?
   deletedAt      DateTime?
 
-  Company        CompaniesAccounts? @relation(fields: [company], references: [id])
+  Company  CompaniesAccounts? @relation(fields: [company], references: [id])
+  Module   Functions?         @relation(fields: [module], references: [id])
 
-  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
-  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
-  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+  createdBy Int?
+  deletedBy Int?
 
-  UsersAccounts  UsersAccounts[]
-  RolesFunctions RolesFunctions[]
+  createdByUser UsersAccounts? @relation("userCreatedCompanyModules", fields: [createdBy], references: [id])
+  deletedByUser UsersAccounts? @relation("userDeletedCompanyModules", fields: [deletedBy], references: [id])
+
+  @@id([company, module])
+  @@map("companies_modules")
+}
+
+model Roles {
+  id          Int      @id @default(autoincrement())
+  displayName String
+  isActive    Boolean
+  company     Int?
+  isDeleted   Boolean  @default(false)
+
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+
+  Company CompaniesAccounts? @relation(fields: [company], references: [id])
+
+  createdByUser UsersAccounts? @relation("userCreatedRoles", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userUpdatedRoles", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("userDeletedRoles", fields: [deletedBy], references: [id])
+
+  UsersAccounts  UsersAccounts[] @relation("userRole")
 
   @@map("roles")
 }
 
 model Functions {
-  id             Int      @id @default(autoincrement())
-  displayName    String
-  isDeleted      Boolean  @default(false)
+  id          Int      @id @default(autoincrement())
+  menuName    String
+  displayName String
+  icon        String
+  parentMenu  String?
+  isDeleted   Boolean  @default(false)
 
-  createdBy      Int?
-  updatedBy      Int?
-  deletedBy      Int?
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime?
-  deletedAt      DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
 
-  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
-  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
-  deletedByUser  UsersAccounts? @relation("DeletedByRelation", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("userCreatedFunctions", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userUpdatedFunctions", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("userDeletedFunctions", fields: [deletedBy], references: [id])
 
-  RolesFunctions RolesFunctions[]
+  UserFunctions   UserFunctions[]
+  CompaniesModules CompaniesModules[]
 
   @@map("functions")
 }
 
-model RolesFunctions {
-  id             Int      @id @default(autoincrement())
-  role           Int
-  function       Int
+model UserFunctions {
+  id        Int @id @default(autoincrement())
+  user      Int
+  function  Int
 
-  createdBy      Int?
-  updatedBy      Int?
+  createdBy Int?
+  updatedBy Int?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
 
-  Role           Roles     @relation(fields: [role], references: [id])
-  Function       Functions @relation(fields: [function], references: [id])
+  User     UsersAccounts     @relation(fields: [user], references: [id])
+  Function Functions @relation(fields: [function], references: [id])
 
-  createdByUser  UsersAccounts? @relation("CreatedByRelation", fields: [createdBy], references: [id])
-  updatedByUser  UsersAccounts? @relation("UpdatedByRelation", fields: [updatedBy], references: [id])
+  createdByUser UsersAccounts? @relation("userCreatedUserFunctions", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userUpdatedUserFunctions", fields: [updatedBy], references: [id])
 
-  @@map("roles_functions")
+  @@unique([user, function])
+
+  @@map("user_functions")
 }
