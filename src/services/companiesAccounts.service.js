@@ -17,18 +17,19 @@ export const getCompanies = async () => {
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },
 
-        // Get isActive for each user so we can count
         UsersAccounts: {
-          select: { isActive: true },
+          select: { isActive: true, isDeleted: true },
         },
       },
     });
 
-    // Add counts
     return companies.map((c) => ({
       ...c,
       activeUsersCount: c.UsersAccounts.filter((u) => u.isActive).length,
-      inactiveUsersCount: c.UsersAccounts.filter((u) => !u.isActive).length,
+      deletedUsersCount: c.UsersAccounts.filter((u) => u.isDeleted).length,
+      inactiveUsersCount: c.UsersAccounts.filter(
+        (u) => !u.isActive && !u.isDeleted
+      ).length,
     }));
   } catch (err) {
     throw new Error(err.message);
