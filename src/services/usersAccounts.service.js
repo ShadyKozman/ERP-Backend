@@ -21,13 +21,13 @@ export const getUsers = async (req) => {
         createdByUser: { select: { displayName: true } },
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },
-        userRole: {
+        roleRelation: {
           select: {
             id: true,
             displayName: true,
           },
         },
-        userCompany: {
+        companyRelation: {
           select: {
             id: true,
             displayName: true,
@@ -56,16 +56,51 @@ export const getUsers = async (req) => {
 
 export const getScreens = async (req) => {
   try {
-    return await prisma.functions.findMany({
-      where: {
-        ...(req.company && { company: Number(req.company) }),
-      },
-      select: {
-        id: true,
-        parentMenu: true,
-        displayName: true,
-      },
-    });
+    let functions = [];
+
+    if (req.company) {
+      const parentFunctions = await prisma.functions.findMany({
+        where: {
+          isDeleted: false,
+          companiesModules: {
+            some: { company: Number(req.company) },
+          },
+        },
+        select: {
+          id: true,
+          menuName: true,
+          parentMenu: true,
+          displayName: true,
+        },
+      });
+
+      const parentNames = parentFunctions.map((f) => f.menuName);
+
+      const childFunctions = await prisma.functions.findMany({
+        where: {
+          isDeleted: false,
+          parentMenu: { in: parentNames },
+        },
+        select: {
+          id: true,
+          displayName: true,
+          parentMenu: true,
+        },
+      });
+
+      functions = [...parentFunctions, ...childFunctions];
+    } else {
+      functions = await prisma.functions.findMany({
+        where: { isDeleted: false },
+        select: {
+          id: true,
+          parentMenu: true,
+          displayName: true,
+        },
+      });
+    }
+
+    return functions;
   } catch (err) {
     throw new Error(err.message);
   }
@@ -93,7 +128,7 @@ export const addUser = async (req) => {
     });
 
     if (body.screens && body.screens.length > 0) {
-      const data = body.screens.map((screenId) => ({
+      const data = body.screens.map((screen) => ({
         function: screen,
         user: createdUser.id,
         createdAt: new Date(),
@@ -125,11 +160,11 @@ export const patchUser = async (req) => {
     };
 
     if (role !== undefined) {
-      dataToUpdate.userRole = { connect: { id: role } };
+      dataToUpdate.roleRelation = { connect: { id: role } };
     }
 
     if (company !== undefined) {
-      dataToUpdate.userCompany = { connect: { id: company } };
+      dataToUpdate.companyRelation = { connect: { id: company } };
     }
 
     if (screens && screens.length > 0) {

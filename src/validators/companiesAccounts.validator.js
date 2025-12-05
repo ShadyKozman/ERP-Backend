@@ -11,6 +11,11 @@ export const addCompanySchema = Joi.object({
   isActive: Joi.boolean().optional().messages({
     "boolean.base": "User status must be true or false",
   }),
+
+  modules: Joi.array().items(Joi.number()).optional().messages({
+    "array.base": "Modules must be an array",
+    "array.includes": "Modules must contain numbers",
+  }),
 });
 
 export const patchCompanySchema = Joi.object({
@@ -27,6 +32,11 @@ export const patchCompanySchema = Joi.object({
   company: Joi.number().required().messages({
     "any.required": "Company is required",
     "number.base": "Company must be a number",
+  }),
+
+  modules: Joi.array().items(Joi.number()).optional().messages({
+    "array.base": "Modules must be an array",
+    "array.includes": "Modules must contain numbers",
   }),
 });
 

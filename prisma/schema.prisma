@@ -30,80 +30,106 @@ model UsersAccounts {
   updatedAt      DateTime?
   deletedAt      DateTime?
 
-  userRole     Roles              @relation("userRole", fields: [role], references: [id])
-  userCompany  CompaniesAccounts? @relation("userCompany", fields: [company], references: [id])
+  // Direct relations
+  roleRelation     Roles              @relation("userRole", fields: [role], references: [id])
+  companyRelation  CompaniesAccounts? @relation("userCompany", fields: [company], references: [id])
 
-  createdByUser UsersAccounts? @relation("userCreatedBy", fields: [createdBy], references: [id])
-  updatedByUser UsersAccounts? @relation("userUpdatedBy", fields: [updatedBy], references: [id])
-  deletedByUser UsersAccounts? @relation("userDeletedBy", fields: [deletedBy], references: [id])
+  // Audit relations (incoming)
+  createdByUser UsersAccounts? @relation("usersCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("usersUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("usersDeleted", fields: [deletedBy], references: [id])
 
-  createdUsers UsersAccounts[] @relation("userCreatedBy")
-  updatedUsers UsersAccounts[] @relation("userUpdatedBy")
-  deletedUsers UsersAccounts[] @relation("userDeletedBy")
+  // Audit relations (outgoing)
+  createdUsers UsersAccounts[] @relation("usersCreated")
+  updatedUsers UsersAccounts[] @relation("usersUpdated")
+  deletedUsers UsersAccounts[] @relation("usersDeleted")
 
-  createdFunctions  Functions[] @relation("userCreatedFunctions")
-  updatedFunctions  Functions[] @relation("userUpdatedFunctions")
-  deletedFunctions  Functions[] @relation("userDeletedFunctions")
+  // Child audit mappings
+  createdRoles        Roles[]              @relation("rolesCreated")
+  updatedRoles        Roles[]              @relation("rolesUpdated")
+  deletedRoles        Roles[]              @relation("rolesDeleted")
 
-  createdUserFunctions  UserFunctions[] @relation("userCreatedUserFunctions")
-  updatedUserFunctions  UserFunctions[] @relation("userUpdatedUserFunctions")
+  createdCompanies    CompaniesAccounts[]  @relation("companiesCreated")
+  updatedCompanies    CompaniesAccounts[]  @relation("companiesUpdated")
+  deletedCompanies    CompaniesAccounts[]  @relation("companiesDeleted")
 
-  createdRoles   Roles[] @relation("userCreatedRoles")
-  updatedRoles   Roles[] @relation("userUpdatedRoles")
-  deletedRoles   Roles[] @relation("userDeletedRoles")
+  createdFunctions    Functions[]          @relation("functionsCreated")
+  updatedFunctions    Functions[]          @relation("functionsUpdated")
+  deletedFunctions    Functions[]          @relation("functionsDeleted")
 
-  createdCompanies  CompaniesAccounts[] @relation("userCreatedCompanies")
-  updatedCompanies  CompaniesAccounts[] @relation("userUpdatedCompanies")
-  deletedCompanies  CompaniesAccounts[] @relation("userDeletedCompanies")
+  createdCompanyModules CompaniesModules[] @relation("companyModulesCreated")
+  deletedCompanyModules CompaniesModules[] @relation("companyModulesDeleted")
 
-  createdCompanyModules CompaniesModules[] @relation("userCreatedCompanyModules")
-  deletedCompanyModules CompaniesModules[] @relation("userDeletedCompanyModules")
+  createdUserFunctions UserFunctions[]     @relation("userFunctionsCreated")
+  updatedUserFunctions UserFunctions[]     @relation("userFunctionsUpdated")
 
-  userFunctions UserFunctions[]
+  createdTasks        Tasks[]              @relation("tasksCreated")
+  updatedTasks        Tasks[]              @relation("tasksUpdated")
+  deletedTasks        Tasks[]              @relation("tasksDeleted")
+
+  createdTaskTemplates TaskTemplate[]       @relation("taskTemplatesCreated")
+  updatedTaskTemplates TaskTemplate[]       @relation("taskTemplatesUpdated")
+  deletedTaskTemplates TaskTemplate[]       @relation("taskTemplatesDeleted")
+
+  createdTaskStatuses   TaskStatus[]        @relation("taskStatusesCreated")
+  updatedTaskStatuses   TaskStatus[]        @relation("taskStatusesUpdated")
+  deletedTaskStatuses   TaskStatus[]        @relation("taskStatusesDeleted")
+
+  createdTemplateStatuses TaskTemplateStatus[] @relation("templateStatusesCreated")
+  updatedTemplateStatuses TaskTemplateStatus[] @relation("templateStatusesUpdated")
+  deletedTemplateStatuses TaskTemplateStatus[] @relation("templateStatusesDeleted")
+
+  // Assignment
+  assignedTasks      Tasks[] @relation("taskAssignee")
+
+  userFunctions      UserFunctions[]
 
   @@map("users_accounts")
 }
 
 model CompaniesAccounts {
-  id             Int      @id @default(autoincrement())  
-  displayName    String
-  isActive       Boolean
-  isDeleted      Boolean  @default(false)
+  id          Int      @id @default(autoincrement())  
+  displayName String
+  isActive    Boolean
+  isDeleted   Boolean  @default(false)
 
-  createdBy      Int?
-  updatedBy      Int?
-  deletedBy      Int?
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime?
-  deletedAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
 
-  createdByUser UsersAccounts? @relation("userCreatedCompanies", fields: [createdBy], references: [id])
-  updatedByUser UsersAccounts? @relation("userUpdatedCompanies", fields: [updatedBy], references: [id])
-  deletedByUser UsersAccounts? @relation("userDeletedCompanies", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("companiesCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("companiesUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("companiesDeleted", fields: [deletedBy], references: [id])
 
-  Roles          Roles[]
-  UsersAccounts  UsersAccounts[] @relation("userCompany")
-  CompaniesModules CompaniesModules[]
+  roles            Roles[]
+  companiesModules CompaniesModules[]
+  tasks            Tasks[] @relation("taskCompany")
+  taskStatus       TaskStatus[] @relation("taskStatusCompany")
+
+  usersAccounts    UsersAccounts[] @relation("userCompany")
 
   @@map("companies_accounts")
 }
 
 model CompaniesModules {
-  company  Int
-  module   Int
+  company    Int
+  module     Int
 
-  createdAt      DateTime @default(now())
-  deletedAt      DateTime?
+  createdBy  Int?
+  deletedBy  Int?
 
-  Company  CompaniesAccounts? @relation(fields: [company], references: [id])
-  Module   Functions?         @relation(fields: [module], references: [id])
+  createdAt  DateTime @default(now())
+  deletedAt  DateTime?
 
-  createdBy Int?
-  deletedBy Int?
+  Company    CompaniesAccounts? @relation(fields: [company], references: [id])
+  Module     Functions?         @relation(fields: [module], references: [id])
 
-  createdByUser UsersAccounts? @relation("userCreatedCompanyModules", fields: [createdBy], references: [id])
-  deletedByUser UsersAccounts? @relation("userDeletedCompanyModules", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("companyModulesCreated", fields: [createdBy], references: [id])
+  deletedByUser UsersAccounts? @relation("companyModulesDeleted", fields: [deletedBy], references: [id])
 
   @@id([company, module])
   @@map("companies_modules")
@@ -114,23 +140,23 @@ model Roles {
   displayName String
   isActive    Boolean
   company     Int?
-  isDeleted   Boolean  @default(false)
+  isDeleted   Boolean @default(false)
 
-  createdBy Int?
-  updatedBy Int?
-  deletedBy Int?
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
 
-  Company CompaniesAccounts? @relation(fields: [company], references: [id])
+  Company     CompaniesAccounts? @relation(fields: [company], references: [id])
 
-  createdByUser UsersAccounts? @relation("userCreatedRoles", fields: [createdBy], references: [id])
-  updatedByUser UsersAccounts? @relation("userUpdatedRoles", fields: [updatedBy], references: [id])
-  deletedByUser UsersAccounts? @relation("userDeletedRoles", fields: [deletedBy], references: [id])
+  createdByUser UsersAccounts? @relation("rolesCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("rolesUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("rolesDeleted", fields: [deletedBy], references: [id])
 
-  UsersAccounts  UsersAccounts[] @relation("userRole")
+  usersAccounts UsersAccounts[] @relation("userRole")
 
   @@map("roles")
 }
@@ -143,6 +169,50 @@ model Functions {
   parentMenu  String?
   isDeleted   Boolean  @default(false)
 
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+
+  createdByUser UsersAccounts? @relation("functionsCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("functionsUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("functionsDeleted", fields: [deletedBy], references: [id])
+
+  userFunctions     UserFunctions[]
+  companiesModules  CompaniesModules[]
+
+  @@map("functions")
+}
+
+model UserFunctions {
+  id         Int @id @default(autoincrement())
+  user       Int
+  function   Int
+
+  createdBy  Int?
+  updatedBy  Int?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime?
+
+  User       UsersAccounts @relation(fields: [user], references: [id])
+  Function   Functions     @relation(fields: [function], references: [id])
+
+  createdByUser UsersAccounts? @relation("userFunctionsCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("userFunctionsUpdated", fields: [updatedBy], references: [id])
+
+  @@unique([user, function])
+
+  @@map("user_functions")
+}
+
+model TaskTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+
   createdBy Int?
   updatedBy Int?
   deletedBy Int?
@@ -151,34 +221,97 @@ model Functions {
   updatedAt DateTime?
   deletedAt DateTime?
 
-  createdByUser UsersAccounts? @relation("userCreatedFunctions", fields: [createdBy], references: [id])
-  updatedByUser UsersAccounts? @relation("userUpdatedFunctions", fields: [updatedBy], references: [id])
-  deletedByUser UsersAccounts? @relation("userDeletedFunctions", fields: [deletedBy], references: [id])
+  statuses  TaskTemplateStatus[]
+  tasks     Tasks[] @relation("taskTemplate")
 
-  UserFunctions   UserFunctions[]
-  CompaniesModules CompaniesModules[]
+  createdByUser UsersAccounts? @relation("taskTemplatesCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("taskTemplatesUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("taskTemplatesDeleted", fields: [deletedBy], references: [id])
 
-  @@map("functions")
+  @@map("tasks_templates")
 }
 
-model UserFunctions {
-  id        Int @id @default(autoincrement())
-  user      Int
-  function  Int
+model TaskStatus {
+  id        Int      @id @default(autoincrement())
+  name      String
+  company   Int?
+  isStart   Boolean
+  isFinish  Boolean
 
   createdBy Int?
   updatedBy Int?
+  deletedBy Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime?
+  deletedAt DateTime?
 
-  User     UsersAccounts     @relation(fields: [user], references: [id])
-  Function Functions @relation(fields: [function], references: [id])
+  tasks Tasks[] @relation("taskStatus")
 
-  createdByUser UsersAccounts? @relation("userCreatedUserFunctions", fields: [createdBy], references: [id])
-  updatedByUser UsersAccounts? @relation("userUpdatedUserFunctions", fields: [updatedBy], references: [id])
+  companyRelation  CompaniesAccounts? @relation("taskStatusCompany", fields: [company], references: [id])
 
-  @@unique([user, function])
+  createdByUser UsersAccounts? @relation("taskStatusesCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("taskStatusesUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("taskStatusesDeleted", fields: [deletedBy], references: [id])
 
-  @@map("user_functions")
+  @@map("task_statuses")
+}
+
+model TaskTemplateStatus {
+  id        Int    @id @default(autoincrement())
+  template  Int
+  name      String
+  sequence  Int  
+
+  createdBy Int?
+  updatedBy Int?
+  deletedBy Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+
+  taskTemplate TaskTemplate @relation(fields: [template], references: [id])
+
+  createdByUser UsersAccounts? @relation("templateStatusesCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("templateStatusesUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("templateStatusesDeleted", fields: [deletedBy], references: [id])
+
+  @@unique([template, sequence])
+  @@map("task_template_status")
+}
+
+model Tasks {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.VarChar(600)
+  dueDate     DateTime
+  completedOn DateTime?
+  assignee    Int
+  company     Int?
+  template    Int?
+  status      Int?
+  priority     String @default("low")
+  actualExpenses Decimal?
+  expectedExpenses Decimal?
+
+
+  createdBy   Int?
+  updatedBy   Int?
+  deletedBy   Int?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+
+  Assignee      UsersAccounts       @relation("taskAssignee", fields: [assignee], references: [id])
+  taskCompany   CompaniesAccounts?  @relation("taskCompany", fields: [company], references: [id])
+  taskTemplate  TaskTemplate?       @relation("taskTemplate", fields: [template], references: [id])
+  taskStatus    TaskStatus?         @relation("taskStatus", fields: [status], references: [id])
+
+  createdByUser UsersAccounts? @relation("tasksCreated", fields: [createdBy], references: [id])
+  updatedByUser UsersAccounts? @relation("tasksUpdated", fields: [updatedBy], references: [id])
+  deletedByUser UsersAccounts? @relation("tasksDeleted", fields: [deletedBy], references: [id])
+
+  @@map("tasks")
 }

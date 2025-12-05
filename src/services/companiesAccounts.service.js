@@ -17,17 +17,31 @@ export const getCompanies = async () => {
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },
 
-        UsersAccounts: {
+        usersAccounts: {
           select: { isActive: true, isDeleted: true },
+        },
+
+        companiesModules: {
+          select: {
+            Module: {
+              select: {
+                id: true,
+                menuName: true,
+                displayName: true,
+                icon: true,
+                parentMenu: true,
+              },
+            },
+          },
         },
       },
     });
 
     return companies.map((c) => ({
       ...c,
-      activeUsersCount: c.UsersAccounts.filter((u) => u.isActive).length,
-      deletedUsersCount: c.UsersAccounts.filter((u) => u.isDeleted).length,
-      inactiveUsersCount: c.UsersAccounts.filter(
+      activeUsersCount: c.usersAccounts.filter((u) => u.isActive).length,
+      deletedUsersCount: c.usersAccounts.filter((u) => u.isDeleted).length,
+      inactiveUsersCount: c.usersAccounts.filter(
         (u) => !u.isActive && !u.isDeleted
       ).length,
     }));
@@ -39,12 +53,25 @@ export const getCompanies = async () => {
 export const addCompany = async (req) => {
   try {
     const { body, currentUser } = req;
+    const { modules, ...bodyData } = body;
 
     const dataToCreate = {
-      ...body,
+      ...bodyData,
       createdAt: new Date(),
       createdBy: currentUser.id,
     };
+
+    if (modules && modules.length > 0) {
+      const data = modules.map((module) => ({
+        company: company,
+        module: module,
+      }));
+
+      await prisma.companiesModules.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
 
     Object.keys(dataToCreate).forEach(
       (key) => dataToCreate[key] === undefined && delete dataToCreate[key]
@@ -63,7 +90,7 @@ export const addCompany = async (req) => {
 export const patchCompany = async (req) => {
   try {
     const { body, currentUser } = req;
-    const { company, ...bodyData } = body;
+    const { company, modules, ...bodyData } = body;
 
     const dataToUpdate = {
       ...bodyData,
@@ -72,6 +99,18 @@ export const patchCompany = async (req) => {
       updatedAt: new Date(),
       updatedBy: currentUser.id,
     };
+
+    if (modules && modules.length > 0) {
+      const data = modules.map((module) => ({
+        company: company,
+        module: module,
+      }));
+
+      await prisma.companiesModules.createMany({
+        data,
+        skipDuplicates: true,
+      });
+    }
 
     Object.keys(dataToUpdate).forEach(
       (key) => dataToUpdate[key] === undefined && delete dataToUpdate[key]

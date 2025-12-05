@@ -6,6 +6,7 @@ import { errorHandler } from "./middlewares/responseHandler.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import rolesRoutes from "./routes/roles.routes.js";
+import tasksRoutes from "./routes/tasks.routes.js";
 import usersAccountsRoutes from "./routes/usersAccounts.routes.js";
 import companiesAccountsRoutes from "./routes/companiesAccounts.routes.js";
 
@@ -20,6 +21,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/tasks", tasksRoutes);
 app.use("/api/users", usersAccountsRoutes);
 app.use("/api/companies", companiesAccountsRoutes);
 

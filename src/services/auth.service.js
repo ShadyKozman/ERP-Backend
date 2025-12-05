@@ -32,25 +32,25 @@ export const login = async (body) => {
       createdByUser: { select: { displayName: true } },
       updatedByUser: { select: { displayName: true } },
       deletedByUser: { select: { displayName: true } },
-      userCompany: {
+
+      companyRelation: {
         select: {
           id: true,
           displayName: true,
           isActive: true,
           isDeleted: true,
-          CompaniesModules: {
+          companiesModules: {
             select: {
               module: true,
             },
           },
         },
       },
-      userRole: {
-        select: {
-          id: true,
-          displayName: true,
-        },
+
+      roleRelation: {
+        select: { id: true, displayName: true },
       },
+
       userFunctions: {
         select: {
           id: true,
@@ -73,39 +73,82 @@ export const login = async (body) => {
     throw new BadRequestError("User not active, contact your admin");
 
   if (
-    user.userCompany &&
-    (user.userCompany.isActive === false || user.userCompany.isDeleted === true)
-  )
+    user.companyRelation &&
+    (user.companyRelation.isActive === false ||
+      user.companyRelation.isDeleted === true)
+  ) {
     throw new BadRequestError(
       "User company not active or is deleted, contact your admin"
     );
-
-  let allowedFunctions = user.userFunctions;
-
-  if (user.userCompany) {
-    const companyModuleIds = user.userCompany.CompaniesModules.map(
-      (cm) => cm.module
-    );
-
-    allowedFunctions = allowedFunctions.filter((rf) =>
-      companyModuleIds.includes(rf.Function.id)
-    );
   }
 
-  const uniqueFunctionsMap = new Map();
+  /*
+  ----------------------------------------------------------
+  BUILD USER MENU TREE
+  ----------------------------------------------------------
+  */
 
-  allowedFunctions.forEach((rf) => {
-    if (!uniqueFunctionsMap.has(rf.Function.id)) {
-      uniqueFunctionsMap.set(rf.Function.id, {
-        key: rf.Function.menuName,
-        label: rf.Function.displayName,
-        icon: rf.Function.icon,
-        parent_key: rf.Function.parentMenu,
-      });
-    }
-  });
+  // 1️⃣ Company-level parent modules (Function IDs)
+  // 1️⃣ Company-level parent module IDs
+  const companyParentIds = user.companyRelation
+    ? user.companyRelation.companiesModules.map((cm) => cm.module)
+    : [];
 
-  user.userFunctions = Array.from(uniqueFunctionsMap.values());
+  // 2️⃣ Extract all assigned functions
+  const functions = user.userFunctions.map((uf) => uf.Function);
+
+  // 3️⃣ Split functions:
+
+  // Parents that match company modules
+  const parents = functions.filter((fn) => companyParentIds.includes(fn.id));
+
+  // Children that belong under a company parent
+  const moduleChildren = functions.filter(
+    (fn) =>
+      !companyParentIds.includes(fn.id) && // not a parent
+      fn.parentMenu && // has a parent
+      parents.some((p) => p.menuName === fn.parentMenu)
+  );
+
+  // 4️⃣ Standalone functions (not tied to company modules)
+  const standaloneFunctions = functions.filter(
+    (fn) =>
+      !companyParentIds.includes(fn.id) && // not a parent module
+      !fn.parentMenu // no parentMenu = standalone
+  );
+
+  // 5️⃣ Build menu tree for company-related modules
+  const moduleMenuTree = parents.map((parent) => ({
+    key: parent.menuName,
+    label: parent.displayName,
+    icon: parent.icon,
+    children: moduleChildren
+      .filter((child) => child.parentMenu === parent.menuName)
+      .map((child) => ({
+        key: child.menuName,
+        label: child.displayName,
+        icon: child.icon,
+      })),
+  }));
+
+  // 6️⃣ Add standalone functions as top-level menu items
+  const standaloneMenuTree = standaloneFunctions.map((fn) => ({
+    key: fn.menuName,
+    label: fn.displayName,
+    icon: fn.icon,
+    children: [],
+  }));
+
+  // 7️⃣ Final menu tree (company + independent)
+  const menuTree = [...moduleMenuTree, ...standaloneMenuTree];
+
+  user.userFunctions = menuTree;
+
+  /*
+  ----------------------------------------------------------
+  AUTHENTICATION LOGIC (unchanged)
+  ----------------------------------------------------------
+  */
 
   const isValidPassword = await bcrypt.compare(password, user.password);
   if (!isValidPassword) throw new BadRequestError("Invalid credentials");
