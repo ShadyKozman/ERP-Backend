@@ -4,7 +4,7 @@ export const getRoles = async (req) => {
   try {
     return await prisma.roles.findMany({
       where: {
-        ...(req.company && { company: Number(req.company) }),
+        company: req.company ? Number(req.company) : null,
       },
       select: {
         id: true,
