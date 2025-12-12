@@ -61,9 +61,17 @@ export const addCompany = async (req) => {
       createdBy: currentUser.id,
     };
 
+    Object.keys(dataToCreate).forEach(
+      (key) => dataToCreate[key] === undefined && delete dataToCreate[key]
+    );
+
+    const createdCompany = await prisma.companiesAccounts.create({
+      data: dataToCreate,
+    });
+
     if (modules && modules.length > 0) {
       const data = modules.map((module) => ({
-        company: company,
+        company: createdCompany.id,
         module: module,
       }));
 
@@ -72,14 +80,6 @@ export const addCompany = async (req) => {
         skipDuplicates: true,
       });
     }
-
-    Object.keys(dataToCreate).forEach(
-      (key) => dataToCreate[key] === undefined && delete dataToCreate[key]
-    );
-
-    await prisma.companiesAccounts.create({
-      data: dataToCreate,
-    });
 
     return [];
   } catch (err) {

@@ -18,6 +18,7 @@ export const getUsers = async (req) => {
         deletedAt: true,
         displayName: true,
         mobileNumber: true,
+        profilePicture: true,
         createdByUser: { select: { displayName: true } },
         updatedByUser: { select: { displayName: true } },
         deletedByUser: { select: { displayName: true } },

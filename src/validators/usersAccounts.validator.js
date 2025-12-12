@@ -126,4 +126,8 @@ export const updateMyProfileSchema = Joi.object({
   password: Joi.string().optional().messages({
     "string.empty": "Password cannot be empty",
   }),
+
+  profilePicture: Joi.string().optional().allow(null).messages({
+    "string.empty": "Profile picture cannot be empty",
+  }),
 });
