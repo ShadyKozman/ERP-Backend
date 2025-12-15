@@ -6,6 +6,7 @@ export const getCompanies = async () => {
     const companies = await prisma.companiesAccounts.findMany({
       select: {
         id: true,
+        logo: true,
         isActive: true,
         isDeleted: true,
         createdAt: true,
@@ -71,8 +72,8 @@ export const addCompany = async (req) => {
 
     if (modules && modules.length > 0) {
       const data = modules.map((module) => ({
-        company: createdCompany.id,
         module: module,
+        company: createdCompany.id,
       }));
 
       await prisma.companiesModules.createMany({

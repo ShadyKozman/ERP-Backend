@@ -16,6 +16,10 @@ export const addCompanySchema = Joi.object({
     "array.base": "Modules must be an array",
     "array.includes": "Modules must contain numbers",
   }),
+
+  logo: Joi.string().optional().allow(null).messages({
+    "string.empty": "Company logo cannot be empty",
+  }),
 });
 
 export const patchCompanySchema = Joi.object({
@@ -37,6 +41,10 @@ export const patchCompanySchema = Joi.object({
   modules: Joi.array().items(Joi.number()).optional().messages({
     "array.base": "Modules must be an array",
     "array.includes": "Modules must contain numbers",
+  }),
+
+  logo: Joi.string().optional().allow(null).messages({
+    "string.empty": "Company logo cannot be empty",
   }),
 });
 

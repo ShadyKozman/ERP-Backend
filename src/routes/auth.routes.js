@@ -2,7 +2,9 @@ import express from "express";
 
 import {
   loginSchema,
+  sendOTPSchema,
   refreshTokenSchema,
+  forgotPasswordSchema,
 } from "../validators/auth.validator.js";
 
 import authenticateToken from "../middlewares/authHandler.js";
@@ -21,6 +23,14 @@ router.post(
   authenticateToken,
   validateRequest(refreshTokenSchema),
   authController.refreshAccessToken
+);
+
+router.post("/sendOTP", validateRequest(sendOTPSchema), authController.sendOTP);
+
+router.post(
+  "/forgotPassword",
+  validateRequest(forgotPasswordSchema),
+  authController.forgotPassword
 );
 
 export default router;

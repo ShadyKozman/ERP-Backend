@@ -188,3 +188,108 @@ export const refreshAccessToken = async (req) => {
     throw new ForbiddenError("Refresh token expired or invalid");
   }
 };
+
+export const sendOTP = async (body) => {
+  const { emailOrMobile } = body;
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrMobile);
+
+  const where = isEmail
+    ? { email: emailOrMobile }
+    : { mobileNumber: emailOrMobile };
+
+  const user = await prisma.usersAccounts.findUnique({
+    where,
+    select: {
+      id: true,
+      email: true,
+      isActive: true,
+      mobileNumber: true,
+
+      companyRelation: {
+        select: {
+          id: true,
+          isActive: true,
+          isDeleted: true,
+        },
+      },
+    },
+  });
+
+  if (!user) throw new NotFoundError("User not found");
+
+  if (!user.isActive)
+    throw new BadRequestError("User not active, contact your admin");
+
+  if (
+    user.companyRelation &&
+    (user.companyRelation.isActive === false ||
+      user.companyRelation.isDeleted === true)
+  ) {
+    throw new BadRequestError(
+      "User company not active or is deleted, contact your admin"
+    );
+  }
+
+  const OTP = Math.floor(100000 + Math.random() * 900000).toString();
+
+  await prisma.usersAccounts.update({
+    where: { id: user.id },
+    data: { passwordOTP: Number(OTP) },
+  });
+
+  return {};
+};
+
+export const forgotPassword = async (body) => {
+  const { emailOrMobile, otp } = body;
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrMobile);
+
+  const where = isEmail
+    ? { email: emailOrMobile }
+    : { mobileNumber: emailOrMobile };
+
+  const user = await prisma.usersAccounts.findUnique({
+    where,
+    select: {
+      id: true,
+      isActive: true,
+      passwordOTP: true,
+
+      companyRelation: {
+        select: {
+          id: true,
+          isActive: true,
+          isDeleted: true,
+        },
+      },
+    },
+  });
+
+  if (!user) throw new NotFoundError("User not found");
+
+  if (!user.isActive)
+    throw new BadRequestError("User not active, contact your admin");
+
+  if (
+    user.companyRelation &&
+    (user.companyRelation.isActive === false ||
+      user.companyRelation.isDeleted === true)
+  ) {
+    throw new BadRequestError(
+      "User company not active or is deleted, contact your admin"
+    );
+  }
+
+  if (otp !== user.passwordOTP)
+    throw new BadRequestError("OTP is invalid, please try again");
+
+  await prisma.usersAccounts.update({
+    where: { id: user.id },
+    data: {
+      passwordOTP: null,
+      password: await bcrypt.hash(body.password, 10),
+    },
+  });
+
+  return {};
+};

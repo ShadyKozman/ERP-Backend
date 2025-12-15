@@ -26,3 +26,27 @@ export const refreshAccessToken = async (req, res) => {
     sendError(res, err.message, 400);
   }
 };
+
+export const sendOTP = async (req, res) => {
+  try {
+    const result = await authService.sendOTP(req.body);
+
+    if (!result) return sendError(res, "Sending OTP failed", 400);
+
+    sendSuccess(res, result, "OTP sent successfully", 200);
+  } catch (err) {
+    sendError(res, err.message, 400);
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const result = await authService.forgotPassword(req.body);
+
+    if (!result) return sendError(res, "Password reset failed", 400);
+
+    sendSuccess(res, result, "Password reset successful", 200);
+  } catch (err) {
+    sendError(res, err.message, 400);
+  }
+};
